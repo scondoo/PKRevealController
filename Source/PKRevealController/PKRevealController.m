@@ -465,12 +465,19 @@ typedef struct
     if ([controller isEqual:self.leftViewController])
     {
         self.leftViewWidthRange = NSMakeRange(minWidth, (maxWidth - minWidth));
+        CGRect newFrame = self.view.bounds;
+        newFrame.size.width = maxWidth;
+        self.leftView.frame = newFrame;
     }
     else if ([controller isEqual:self.rightViewController])
     {
         self.rightViewWidthRange = NSMakeRange(minWidth, (maxWidth - minWidth));
+        CGRect newFrame = self.view.bounds;
+        newFrame.size.width = maxWidth;
+        self.rightView.frame = newFrame;
     }
 }
+
 
 - (void)setOptions:(NSDictionary *)options
 {
@@ -627,6 +634,55 @@ typedef struct
 }
 
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_7_0
+
+- (UIViewController *)childViewControllerForStatusBarHidden {
+    if (self.presentedViewController && !self.presentedViewController.isBeingDismissed) {
+        return self.presentedViewController;
+    }
+    else {
+        
+        switch (self.state)
+        {
+            case PKRevealControllerShowsLeftViewControllerInPresentationMode:
+            case PKRevealControllerShowsLeftViewController:
+                return self.leftViewController;
+            case PKRevealControllerShowsRightViewControllerInPresentationMode:
+            case PKRevealControllerShowsRightViewController:
+                return self.rightViewController;
+            case PKRevealControllerShowsFrontViewController:
+                return self.frontViewController;
+                
+            default:
+            {
+                return nil;
+            }
+        }
+    }
+}
+
+- (UIViewController *)childViewControllerForStatusBarStyle {
+    if (self.presentedViewController && !self.presentedViewController.isBeingDismissed) {
+        return self.presentedViewController;
+    }
+    else {
+        switch (self.state)
+        {
+            case PKRevealControllerShowsLeftViewControllerInPresentationMode:
+            case PKRevealControllerShowsLeftViewController:
+                return self.leftViewController;
+            case PKRevealControllerShowsRightViewControllerInPresentationMode:
+            case PKRevealControllerShowsRightViewController:
+                return self.rightViewController;
+            case PKRevealControllerShowsFrontViewController:
+                return self.frontViewController;
+                
+            default:
+            {
+                return nil;
+            }
+        }
+    }
+}
 
 - (UIStatusBarStyle)preferredStatusBarStyle
 {
@@ -993,7 +1049,9 @@ typedef struct
     self.leftView.hidden = YES;
     [self removeViewController:self.leftViewController];
     [self removeViewController:self.rightViewController];
-    [self.frontView setUserInteractionForContainedViewEnabled:YES];
+    if (self.disablesFrontViewInteraction) {
+        [self.frontView setUserInteractionForContainedViewEnabled:YES];
+    }
 }
 
 - (void)showRightView
@@ -1002,7 +1060,9 @@ typedef struct
     self.leftView.hidden = YES;
     [self removeViewController:self.leftViewController];
     [self addViewController:self.rightViewController container:self.rightView];
-    [self.frontView setUserInteractionForContainedViewEnabled:NO];
+    if (self.disablesFrontViewInteraction) {
+        [self.frontView setUserInteractionForContainedViewEnabled:NO];
+    }
 }
 
 - (void)showLeftView
@@ -1011,7 +1071,9 @@ typedef struct
     self.leftView.hidden = NO;
     [self removeViewController:self.rightViewController];
     [self addViewController:self.leftViewController container:self.leftView];
-    [self.frontView setUserInteractionForContainedViewEnabled:NO];
+    if (self.disablesFrontViewInteraction) {
+        [self.frontView setUserInteractionForContainedViewEnabled:NO];
+    }
 }
 
 - (BOOL)isLeftViewVisible
